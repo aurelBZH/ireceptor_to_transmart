@@ -1,6 +1,6 @@
 import click
 import os
-from download import download_from_ireceptor
+from request_data_from_irec import download_from_ireceptor
 
 
 @click.command()
