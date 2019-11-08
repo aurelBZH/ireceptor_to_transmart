@@ -39,7 +39,8 @@ def request_access_token(authorize_url : str ,callback_uri: str, token_url: str,
     tokens = json.loads(access_token_response.text)
     access_token = tokens['access_token']
     refresh_token = tokens['refresh_token']
-    expires_in = type(tokens['expires_in'])
+    logger.debug(refresh_token)
+    expires_in = tokens['expires_in']
     logger.debug ("access token: " + access_token)
 
     return access_token, refresh_token, expires_in
@@ -67,12 +68,22 @@ def request_data(test_api_url : str):
     return api_call_response, api_call_response.text
 
 
-def refresh_expired_access_token(refresh_token:str):
-    pass
+def refresh_expired_access_token(refresh_token:str, token_url:str):
+
+    data= {'grant_type': 'refresh_token',
+    'code': config_data.refresh_token,
+    'redirect_uri': 'https://transmart.i3lab.cloud:8445/transmart/oauth/verify'}
+    access_token_response = requests.post(config_data.token_url, data=data, verify=False, allow_redirects=True, auth=(config_data.client_id, config_data.client_secret))
+    tokens = json.loads(access_token_response.text)
+    print(tokens)
+    access_token = tokens['access_token']
+    refresh_token = tokens['refresh_token']
+    expires_in = tokens['expires_in']
     return access_token, refresh_token, expires_in 
 
 
 
 if __name__ == "__main__":
-    print(request_data("https://transmart.i3lab.cloud:8445/transmart/studies"))
-    print(request_data("https://transmart.i3lab.cloud:8445/transmart/studies/MSY012/subjects"))
+    # print(request_data("https://transmart.i3lab.cloud:8445/transmart/studies"))
+    # print(request_data("https://transmart.i3lab.cloud:8445/transmart/studies/MSY012/subjects"))
+    print(refresh_expired_access_token("0a07d7a1-3c9b-4545-9142-999e32d7a041",config_data.token_url))
