@@ -11,17 +11,16 @@ def request_access_token(authorize_url : str ,callback_uri: str, token_url: str,
     """[summary]
     
     Arguments:
-        authorize_url {str} -- [description]
-        callback_uri {str} -- [description]
-        token_url {str} -- [description]
-        client_id {str} -- [description]
-        client_secret {str} -- [description]
+        authorize_url {str} -- url for authorisation
+        callback_uri {str} -- url for calback after authorisation
+        token_url {str} -- url for token download
+        client_id {str} -- id of the client
+        client_secret {str} -- password for the client
     
     Returns:
-        [type] -- [description]
+        [type] -- tokens and expiration date
     """
-    authorization_redirect_url = authorize_url + '?response_type=code&client_id=' + client_id +'&client_secret='+ client_secret + '&redirect_uri=' + callback_uri
-    authorization_redirect_url = authorize_url + '?response_type=code&client_id=' + client_id +'&client_secret='+ client_secret + '&redirect_uri=' + callback_uri
+    authorization_redirect_url = f'{authorize_url}?response_type=code&client_id={client_id}&client_secret={client_secret}&redirect_uri={callback_uri}'
     logger.info("go to the following url on the browser and enter the code from the returned url: ")
     logger.info ("---  " + authorization_redirect_url + "  ---")
     authorization_code = input('code: ')
