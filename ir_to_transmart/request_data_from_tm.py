@@ -44,17 +44,16 @@ def request_access_token(authorize_url : str ,callback_uri: str, token_url: str,
 
     return access_token, refresh_token, expires_in
 
-def request_data(test_api_url : str):
+def request_data(api_url : str):
     """[summary]
     
     Arguments:
-        test_api_url {str} -- [description]
+        api_url {str} -- the url the data the user want to download  
     
     Returns:
         [type] -- [description]
     """
-    if  not config_data.access_token or not config_data.refresh_token or not config_data.expires_in:
-        
+    if  not config_data.access_token or not config_data.refresh_token :
         access_token, refresh_token, expires_in = request_access_token(config_data.authorize_url ,config_data.callback_uri, config_data.token_url, config_data.client_id , config_data.client_secret )
         config_data.access_token = access_token
         config_data.refresh_token = refresh_token
@@ -62,17 +61,39 @@ def request_data(test_api_url : str):
         api_call_headers = {'Authorization': 'Bearer ' + access_token}
     else:
         api_call_headers = {'Authorization': 'Bearer ' + config_data.access_token}
+    try:
+        api_call_response = requests.get(config_data.domain_name + api_url, headers=api_call_headers, verify=False)
+        if 'error' in api_call_response.json() and api_call_response.json()["error"]=="invalid_token":
+            access_token, refresh_token, expires_in = request_access_token(config_data.authorize_url ,config_data.callback_uri, config_data.token_url, config_data.client_id , config_data.client_secret )
+
+    except requests.exceptions.RequestException as e:
+        logger.exception(e)
+
+    logger.debug(api_call_response)
+    logger.debug(type(api_call_response.json()))
+    file_name = "_".join(api_url.split("/"))
+    file_url = f"download/{file_name}"
+    with open(file_url, 'w+') as outfile:
+        json.dump(api_call_response.json(),outfile)
+    return api_call_response, outfile
+
+
+def refresh_expired_access_token(refresh_token:str, token_url:str, callback_uri: str):
+    """refresh access token
     
-    api_call_response = requests.get(test_api_url, headers=api_call_headers, verify=False)
-    return api_call_response, api_call_response.text
-
-
-def refresh_expired_access_token(refresh_token:str, token_url:str):
+    Arguments:
+        refresh_token {str} -- refresh token
+        token_url {str} -- url to refresh token
+        callback_uri {str} -- callback uri
+    
+    Returns:
+        [type] -- return new tokens
+    """
 
     data= {'grant_type': 'refresh_token',
-    'code': config_data.refresh_token,
-    'redirect_uri': 'https://transmart.i3lab.cloud:8445/transmart/oauth/verify'}
-    access_token_response = requests.post(config_data.token_url, data=data, verify=False, allow_redirects=True, auth=(config_data.client_id, config_data.client_secret))
+    'code': refresh_token,
+    'redirect_uri': callback_uri}
+    access_token_response = requests.post(token_url, data=data, verify=False, allow_redirects=True, auth=(config_data.client_id, config_data.client_secret))
     tokens = json.loads(access_token_response.text)
     print(tokens)
     access_token = tokens['access_token']
