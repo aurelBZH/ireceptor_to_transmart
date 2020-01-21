@@ -62,11 +62,18 @@ diversityA <- function(x, index=c("shannon", "simpson", "invsimpson", "berger_pa
     if (missing(x)) stop("data set x is required.")
   x <- x/sum(x)
   id <- match.arg(index)
- 
+  if(id=="berger_parker"){
+    # berger parker
+    
+    H <- -log(max(x))
+  }
   if (id == "shannon"|| id=="pielou") {
     x <- -x * log(x, base)
     
-  }  else {
+  }else if(id=="berger_parker"){
+    
+  } 
+  else {
     x <- x * x
   }
   H <- sum(x, na.rm = TRUE)
@@ -80,10 +87,10 @@ diversityA <- function(x, index=c("shannon", "simpson", "invsimpson", "berger_pa
   } else if (id == "invsimpson") {
     H <- 1/H
   }
-  if(id=="berger_parker"){
-  # berger parker
-    H <- -log(max(x))
+  if (id=="berger_parker"){
+   H <- -log(max(x))
   }
+
   if (id=="richness"){
     #richness
     H<-length(x)
