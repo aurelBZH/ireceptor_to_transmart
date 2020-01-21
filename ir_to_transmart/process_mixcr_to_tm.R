@@ -8,7 +8,9 @@ main<-function(){
   # example from vignette
   parser <- ArgumentParser(description='Process some integers')
   parser$add_argument('directory', type="character",help='file directory')
-  parser$add_argument('--level', type="character", dest='level', help='V J VpJ')
+  parser$add_argument('--level', type="character",default="VpJ", dest='level', help='V J VpJ')
+  parser$add_argument('--chain', type="character",default="B", dest='chain', help='A B')
+  
   # parser$add_argument('--alpha', type="integer", nargs='+',default=c(0, 0.25, 0.5, 1.00001, 2, 4, 8, 16, 32, 64,Inf) ,help='an integer for the accumulator')
   
   args=parser$parse_args()
@@ -16,7 +18,7 @@ main<-function(){
   
   inputFolder <- list.files(args$directory, full.name = TRUE, pattern = ".txt")
   # #read MIXCR file and create a repseq object
-  datatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="A", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  datatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=args$chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
   # # write to a file
   write.csv(datatab@sampleData,"sample_info.csv")
   print( typeof(basicIndices(datatab, "CDR3aa")))
