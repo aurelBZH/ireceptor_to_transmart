@@ -2,42 +2,60 @@ library(RepSeq)
 #library(docstring)
 library("argparse")
 library('data.table')
+library('futile.logger')
 
-# get file from directory
+
 main<-function(){
   # example from vignette
   parser <- ArgumentParser(description='Process some integers')
   parser$add_argument('directory', type="character",help='file directory')
+  parser$add_argument('--output_dir',default="./results/", type="character",help='output directory')
+  
   parser$add_argument('--level', type="character",default="VpJ", dest='level', help='V J VpJ')
   parser$add_argument('--chain', type="character",default="B", dest='chain', help='A B')
   
   # parser$add_argument('--alpha', type="integer", nargs='+',default=c(0, 0.25, 0.5, 1.00001, 2, 4, 8, 16, 32, 64,Inf) ,help='an integer for the accumulator')
+  flog.logger("info", WARN, appender=appender.file(paste(args$output_dir,"info.log", sep="")))
   
+  flog.info(" commit where the data was generated :", name="info")
+  try(flog.info(system("git show --oneline -s"), name="info"))
+  flog.info("parameters:", name="info")
   args=parser$parse_args()
-  print(args$directory)
+  flog.info(args$directory, name="info")
+  flog.info(args$level, name="info")
+  flog.info(args$chain, name="info")
   
+  flog.info
+  
+  if (!dir.exists(args$output_dir)||file.exists(args$output_dir)){
+    dir.create(args$output_dir)
+    info_file=file.create("info.txt")
+  } else {
+    flog.warn("Dir already exists or is a file!", name="info")
+  }
   inputFolder <- list.files(args$directory, full.name = TRUE, pattern = ".txt")
   # #read MIXCR file and create a repseq object
+ 
   datatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=args$chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
   # # write to a file
-  write.csv(datatab@sampleData,"sample_info.csv")
-  print( typeof(basicIndices(datatab, "CDR3aa")))
+  if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
+    write.csv(datatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
+    
+  }
+  if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
+    write.csv(basicIndicesA(datatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
+    
+  }
+  print( typeof(basicIndicesA(datatab, "CDR3aa")))
   # # write to a file
-  write.csv(basicIndices(datatab, args$level),"diversity_info.csv") 
   res<-renyiProfiles(datatab, level=args$level)
-  write.csv(t(res),"renyi_Profile.csv") 
+  write.csv(t(res),paste(args$output_dir,"renyi_Profile.csv", sep="")) 
   
 }
-main()
-
-
 
 
 basicIndicesA <- function(x, level=c("VpJ", "V", "J", "VJ", "CDR3aa")) {
-  "
-  
-  
-  "
+ 
   if (missing(x)) stop("x is missing.")
   if (!is.RepSeqExperiment(x)) stop("an object of class  is expected.")
   levelChoice <- match.arg(level)
