@@ -12,47 +12,72 @@ main<-function(){
   parser$add_argument('--output_dir',default="./results/", type="character",help='output directory')
   
   parser$add_argument('--level', type="character",default="VpJ", dest='level', help='V J VpJ')
-  parser$add_argument('--chain', type="character",default="B", dest='chain', help='A B')
+#  parser$add_argument('--chain', type="character",default="B", dest='chain', help='A B')
   
   # parser$add_argument('--alpha', type="integer", nargs='+',default=c(0, 0.25, 0.5, 1.00001, 2, 4, 8, 16, 32, 64,Inf) ,help='an integer for the accumulator')
-  flog.logger("info", WARN, appender=appender.file(paste(args$output_dir,"info.log", sep="")))
-  
-  flog.info(" commit where the data was generated :", name="info")
-  try(flog.info(system("git show --oneline -s"), name="info"))
-  flog.info("parameters:", name="info")
   args=parser$parse_args()
-  flog.info(args$directory, name="info")
-  flog.info(args$level, name="info")
-  flog.info(args$chain, name="info")
-  
-  flog.info
-  
+  info_file<-paste(args$output_dir,"info.txt", sep="")
   if (!dir.exists(args$output_dir)||file.exists(args$output_dir)){
     dir.create(args$output_dir)
-    info_file=file.create("info.txt")
+    file.create(info_file)
+    
+    flog.logger("info", INFO, appender=appender.file(paste(args$output_dir,"info.log", sep="")))
+    
   } else {
-    flog.warn("Dir already exists or is a file!", name="info")
+    flog.logger("info", INFO, appender=appender.file(paste(args$output_dir,"info.log", sep="")))
+    file.create(info_file)
+    
+    
+   write("Dir already exists or is a file!", info_file)
   }
   inputFolder <- list.files(args$directory, full.name = TRUE, pattern = ".txt")
   # #read MIXCR file and create a repseq object
  
-  datatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=args$chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  Adatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=args$chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  Bdatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=args$chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  
+  write("----------- commit where the data was generated :-------",info_file,append =TRUE)
+  try(write(system("git show --oneline -s", intern = TRUE),info_file,append =TRUE))
+  write("----------parameters:---------",info_file,append =TRUE)
+  write(args$directory,info_file,append =TRUE)
+  write(args$level,info_file,append =TRUE)
+  write(args$chain,info_file,append =TRUE)
+  write(str(Adatatab@History),info_file,append =TRUE)
+  write(str(Bdatatab@History),info_file,append =TRUE)
+  sessionInfo<-sessionInfo()
+  write(sessionInfo$R.version$version.string,info_file,append =TRUE)
+  
+  write("--------used library---------",info_file,append =TRUE)
+  
+  sapply(sessionInfo$otherPkgs,function(x)lib_write(x,info_file))
   # # write to a file
   if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
-    write.csv(datatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
+    write.csv(Adatatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
+    write.csv(Bdatatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
     
   }
   if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
-    write.csv(basicIndicesA(datatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
+    write.csv(basicIndicesA(Adatatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
+    write.csv(basicIndicesA(Bdatatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
     
   }
-  print( typeof(basicIndicesA(datatab, "CDR3aa")))
   # # write to a file
-  res<-renyiProfiles(datatab, level=args$level)
+  res<-renyiProfiles(Adatatab, level=args$level)
   write.csv(t(res),paste(args$output_dir,"renyi_Profile.csv", sep="")) 
   
 }
 
+lib_write<-function(package_info, file_name){
+  #write information in readme file
+  #
+  #
+  
+   write(package_info$Package,file_name,append =TRUE)
+   write(package_info$Title,file_name,append =TRUE)
+   write(package_info$Version,file_name,append =TRUE)
+  # 
+  
+}
 
 basicIndicesA <- function(x, level=c("VpJ", "V", "J", "VJ", "CDR3aa")) {
  
