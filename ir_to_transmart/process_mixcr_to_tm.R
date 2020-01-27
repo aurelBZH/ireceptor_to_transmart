@@ -14,14 +14,6 @@ main<-function(){
   # parser$add_argument('--alpha', type="integer", nargs='+',default=c(0, 0.25, 0.5, 1.00001, 2, 4, 8, 16, 32, 64,Inf) ,help='an integer for the accumulator')
   
   args=parser$parse_args()
-  # if (!dir.exists(args$output_dir)){
-  #   dir.create(args$output_dir)
-  # 
-  # } else if(file.exists(args$output_dir)){
-  #   
-  #   
-  #  write("this name is already used by a file", info_file)
-  # }
   try( dir.create(args$output_dir))
   
   #list file in input folder
@@ -32,18 +24,20 @@ main<-function(){
   # # write to a file
   if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
     # write sample info in a result file
-    write.csv(Adatatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
-    write.csv(Bdatatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
+    write.csv(Adatatab@sampleData,paste(args$output_dir,"sample_infoA.csv", sep=""))
+    write.csv(Bdatatab@sampleData,paste(args$output_dir,"sample_infoB.csv", sep=""))
     
   }
   if(!file.exists(paste(args$output_dir,"diversity_info.csv"))){
-    write.csv(basicIndicesA(Adatatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
-    write.csv(basicIndicesA(Bdatatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
+    write.csv(basicIndicesA(Adatatab, args$level),paste(args$output_dir,"diversity_infoA.csv", sep="")) 
+    write.csv(basicIndicesA(Bdatatab, args$level),paste(args$output_dir,"diversity_infoB.csv", sep="")) 
     
   }
   # # write to a file
   res<-renyiProfiles(Adatatab, level=args$level)
-  write.csv(t(res),paste(args$output_dir,"renyi_Profile.csv", sep="")) 
+  write.csv(t(res),paste(args$output_dir,"renyi_ProfileA.csv", sep="")) 
+  res<-renyiProfiles(Bdatatab, level=args$level)
+  write.csv(t(res),paste(args$output_dir,"renyi_ProfileB.csv", sep="")) 
   writeReadme(args$output_dir,args$directory,args$level,Adatatab@History$history,Bdatatab@History$history)
 }
 
