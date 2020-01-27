@@ -10,45 +10,64 @@ main<-function(){
   parser <- ArgumentParser(description='Process some integers')
   parser$add_argument('directory', type="character",help='file directory')
   parser$add_argument('--output_dir',default="./results/", type="character",help='output directory')
-  
   parser$add_argument('--level', type="character",default="VpJ", dest='level', help='V J VpJ')
-#  parser$add_argument('--chain', type="character",default="B", dest='chain', help='A B')
-  
   # parser$add_argument('--alpha', type="integer", nargs='+',default=c(0, 0.25, 0.5, 1.00001, 2, 4, 8, 16, 32, 64,Inf) ,help='an integer for the accumulator')
+  
   args=parser$parse_args()
-  info_file<-paste(args$output_dir,"info.txt", sep="")
-  if (!dir.exists(args$output_dir)||file.exists(args$output_dir)){
-    dir.create(args$output_dir)
-    file.create(info_file)
-    
-    flog.logger("info", INFO, appender=appender.file(paste(args$output_dir,"info.log", sep="")))
-    
-  } else {
-    flog.logger("info", INFO, appender=appender.file(paste(args$output_dir,"info.log", sep="")))
-    file.create(info_file)
-    
-    
-   write("Dir already exists or is a file!", info_file)
-  }
+  # if (!dir.exists(args$output_dir)){
+  #   dir.create(args$output_dir)
+  # 
+  # } else if(file.exists(args$output_dir)){
+  #   
+  #   
+  #  write("this name is already used by a file", info_file)
+  # }
+  try( dir.create(args$output_dir))
+  
+  #list file in input folder
   inputFolder <- list.files(args$directory, full.name = TRUE, pattern = ".txt")
   # #read MIXCR file and create a repseq object
- 
   Adatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="A", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
   Bdatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="B", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  # # write to a file
+  if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
+    # write sample info in a result file
+    write.csv(Adatatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
+    write.csv(Bdatatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
+    
+  }
+  if(!file.exists(paste(args$output_dir,"diversity_info.csv"))){
+    write.csv(basicIndicesA(Adatatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
+    write.csv(basicIndicesA(Bdatatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
+    
+  }
+  # # write to a file
+  res<-renyiProfiles(Adatatab, level=args$level)
+  write.csv(t(res),paste(args$output_dir,"renyi_Profile.csv", sep="")) 
+  writeReadme(args$output_dir,args$directory,args$level,Adatatab@History$history,Bdatatab@History$history)
+}
+
+
+
+writeReadme<-function(output_dir, input_dir,level, RepseqExperimentHistoryA,RepseqExperimentHistoryB){
+  print("pong")
+  info_file<-paste(output_dir,"info.txt", sep="")
+  file.create(info_file)
+  
   write("\n",info_file,append =TRUE)
   
   write("----------- commit where the data was generated :-------",info_file,append =TRUE)
   try(write(system("git show --oneline -s", intern = TRUE),info_file,append =TRUE))
   write("----------parameters:---------",info_file,append =TRUE)
-  write(paste("input directory :",args$directory,sep=" "),info_file,append =TRUE)
-  write(paste("analysis level",args$level,sep=" "),info_file,append =TRUE)
-  write(paste("output directory :",args$output_dir,sep=" "),info_file,append =TRUE)
+  write(paste("input directory :",input_dir,sep=" "),info_file,append =TRUE)
+  write(paste("analysis level :",level,sep=" "),info_file,append =TRUE)
+  write(paste("output directory :",output_dir,sep=" "),info_file,append =TRUE)
   write("\n",info_file,append =TRUE)
   
   write("----------RepseqExperiment history:---------",info_file,append =TRUE)
   
-  write(Adatatab@History$history,info_file,append =TRUE)
-  write(Bdatatab@History$history,info_file,append =TRUE)
+  write(RepseqExperimentHistoryA,info_file,append =TRUE)
+  write(RepseqExperimentHistoryB,info_file,append =TRUE)
   
   sessionInfo<-sessionInfo()
   write(sessionInfo$R.version$version.string,info_file,append =TRUE)
@@ -57,20 +76,6 @@ main<-function(){
   write("--------used library---------",info_file,append =TRUE)
   
   sapply(sessionInfo$otherPkgs,function(x)lib_write(x,info_file))
-  # # write to a file
-  if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
-    write.csv(Adatatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
-    write.csv(Bdatatab@sampleData,paste(args$output_dir,"sample_info.csv", sep=""))
-    
-  }
-  if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
-    write.csv(basicIndicesA(Adatatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
-    write.csv(basicIndicesA(Bdatatab, args$level),paste(args$output_dir,"diversity_info.csv", sep="")) 
-    
-  }
-  # # write to a file
-  res<-renyiProfiles(Adatatab, level=args$level)
-  write.csv(t(res),paste(args$output_dir,"renyi_Profile.csv", sep="")) 
   
 }
 
