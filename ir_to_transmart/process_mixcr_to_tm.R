@@ -19,31 +19,64 @@ main<-function(){
   #list file in input folder
   inputFolder <- list.files(args$directory, full.name = TRUE, pattern = ".txt")
   # #read MIXCR file and create a repseq object
-  Adatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="A", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
-  Bdatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="B", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  # Adatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="A", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  # Bdatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="B", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  # # # write to a file
+  # if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
+  #   # write sample info in a result file
+  #   write.csv(Adatatab@sampleData,paste(args$output_dir,"sample_infoA.csv", sep=""))
+  #   write.csv(Bdatatab@sampleData,paste(args$output_dir,"sample_infoB.csv", sep=""))
+  #   
+  # }
+  # if(!file.exists(paste(args$output_dir,"diversity_info.csv"))){
+  #   write.csv(basicIndicesA(Adatatab, args$level),paste(args$output_dir,"diversity_infoA.csv", sep="")) 
+  #   write.csv(basicIndicesA(Bdatatab, args$level),paste(args$output_dir,"diversity_infoB.csv", sep="")) 
+  #   
+  # }
+  # # # write to a file
+  # res<-renyiProfiles(Adatatab, level=args$level)
+  # write.csv(t(res),paste(args$output_dir,"renyi_ProfileA.csv", sep="")) 
+  # res<-renyiProfiles(Bdatatab, level=args$level)
+  # write.csv(t(res),paste(args$output_dir,"renyi_ProfileB.csv", sep="")) 
+  #
+  process_file(inputFolder,chain="A", args$output_dir, args$level,args$directory)
+  
+  process_file(inputFolder,chain="B", args$output_dir, args$level,args$directory)
+}
+
+process_file<-function(inputFolder, chain, output_dir, level,inputDir){
+  datatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
   # # write to a file
-  if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
+  if(!file.exists(paste(output_dir,"sample_info",chain,".csv", sep=""))){
     # write sample info in a result file
-    write.csv(Adatatab@sampleData,paste(args$output_dir,"sample_infoA.csv", sep=""))
-    write.csv(Bdatatab@sampleData,paste(args$output_dir,"sample_infoB.csv", sep=""))
-    
+    write.csv(datatab@sampleData,paste(output_dir,"sample_info",chain,".csv", sep=""))
+
+  }else{
+    stop(paste("file",output_dir,"sample_info",chain,".csv"," already exist", sep=""))
   }
-  if(!file.exists(paste(args$output_dir,"diversity_info.csv"))){
-    write.csv(basicIndicesA(Adatatab, args$level),paste(args$output_dir,"diversity_infoA.csv", sep="")) 
-    write.csv(basicIndicesA(Bdatatab, args$level),paste(args$output_dir,"diversity_infoB.csv", sep="")) 
+  if(!file.exists(paste(output_dir,"diversity_info",chain,".csv", sep=""))){
+    write.csv(basicIndicesA(datatab, level),paste(output_dir,"diversity_info",chain,".csv", sep="")) 
+
+  }else{
+    stop(paste("file",output_dir,"diversity_info",chain,".csv"," already exist", sep=""))
     
   }
   # # write to a file
-  res<-renyiProfiles(Adatatab, level=args$level)
-  write.csv(t(res),paste(args$output_dir,"renyi_ProfileA.csv", sep="")) 
-  res<-renyiProfiles(Bdatatab, level=args$level)
-  write.csv(t(res),paste(args$output_dir,"renyi_ProfileB.csv", sep="")) 
-  writeReadme(args$output_dir,args$directory,args$level,Adatatab@History$history,Bdatatab@History$history)
+  if(!file.exists(paste(output_dir,"renyi_Profile",chain,".csv", sep=""))){
+  res<-renyiProfiles(datatab, level=level)
+  write.csv(t(res),paste(output_dir,"renyi_Profile",chain,".csv", sep="")) 
+#  writeReadme(output_dir,inputDir,level,datatab@History$history)
+  }else{
+    stop(paste("file",output_dir,"renyi_Profile",chain,".csv"," already exist", sep=""))
+    
+  }
+  rm(datatab)
 }
 
 
 
-writeReadme<-function(output_dir, input_dir,level, RepseqExperimentHistoryA,RepseqExperimentHistoryB){
+
+writeReadme<-function(output_dir, input_dir,level, RepseqExperimentHistory){
   print("pong")
   info_file<-paste(output_dir,"info.txt", sep="")
   file.create(info_file)
@@ -60,9 +93,8 @@ writeReadme<-function(output_dir, input_dir,level, RepseqExperimentHistoryA,Reps
   
   write("----------RepseqExperiment history:---------",info_file,append =TRUE)
   
-  write(RepseqExperimentHistoryA,info_file,append =TRUE)
-  write(RepseqExperimentHistoryB,info_file,append =TRUE)
-  
+  write(RepseqExperimentHistory,info_file,append =TRUE)
+
   sessionInfo<-sessionInfo()
   write(sessionInfo$R.version$version.string,info_file,append =TRUE)
   write("\n",info_file,append =TRUE)
