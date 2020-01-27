@@ -33,19 +33,26 @@ main<-function(){
   inputFolder <- list.files(args$directory, full.name = TRUE, pattern = ".txt")
   # #read MIXCR file and create a repseq object
  
-  Adatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=args$chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
-  Bdatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=args$chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  Adatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="A", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  Bdatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="B", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
+  write("\n",info_file,append =TRUE)
   
   write("----------- commit where the data was generated :-------",info_file,append =TRUE)
   try(write(system("git show --oneline -s", intern = TRUE),info_file,append =TRUE))
   write("----------parameters:---------",info_file,append =TRUE)
-  write(args$directory,info_file,append =TRUE)
-  write(args$level,info_file,append =TRUE)
-  write(args$chain,info_file,append =TRUE)
-  write(str(Adatatab@History),info_file,append =TRUE)
-  write(str(Bdatatab@History),info_file,append =TRUE)
+  write(paste("input directory :",args$directory,sep=" "),info_file,append =TRUE)
+  write(paste("analysis level",args$level,sep=" "),info_file,append =TRUE)
+  write(paste("output directory :",args$output_dir,sep=" "),info_file,append =TRUE)
+  write("\n",info_file,append =TRUE)
+  
+  write("----------RepseqExperiment history:---------",info_file,append =TRUE)
+  
+  write(Adatatab@History$history,info_file,append =TRUE)
+  write(Bdatatab@History$history,info_file,append =TRUE)
+  
   sessionInfo<-sessionInfo()
   write(sessionInfo$R.version$version.string,info_file,append =TRUE)
+  write("\n",info_file,append =TRUE)
   
   write("--------used library---------",info_file,append =TRUE)
   
