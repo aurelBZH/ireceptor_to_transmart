@@ -6,6 +6,7 @@ library('futile.logger')
 
 
 main<-function(){
+  #main function 
   # example from vignette
   parser <- ArgumentParser(description='Process some integers')
   parser$add_argument('directory', type="character",help='file directory')
@@ -18,33 +19,18 @@ main<-function(){
   
   #list file in input folder
   inputFolder <- list.files(args$directory, full.name = TRUE, pattern = ".txt")
-  # #read MIXCR file and create a repseq object
-  # Adatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="A", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
-  # Bdatatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain="B", sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
-  # # # write to a file
-  # if(!file.exists(paste(args$output_dir,"sample_info.csv"))){
-  #   # write sample info in a result file
-  #   write.csv(Adatatab@sampleData,paste(args$output_dir,"sample_infoA.csv", sep=""))
-  #   write.csv(Bdatatab@sampleData,paste(args$output_dir,"sample_infoB.csv", sep=""))
-  #   
-  # }
-  # if(!file.exists(paste(args$output_dir,"diversity_info.csv"))){
-  #   write.csv(basicIndicesA(Adatatab, args$level),paste(args$output_dir,"diversity_infoA.csv", sep="")) 
-  #   write.csv(basicIndicesA(Bdatatab, args$level),paste(args$output_dir,"diversity_infoB.csv", sep="")) 
-  #   
-  # }
-  # # # write to a file
-  # res<-renyiProfiles(Adatatab, level=args$level)
-  # write.csv(t(res),paste(args$output_dir,"renyi_ProfileA.csv", sep="")) 
-  # res<-renyiProfiles(Bdatatab, level=args$level)
-  # write.csv(t(res),paste(args$output_dir,"renyi_ProfileB.csv", sep="")) 
-  #
   process_file(inputFolder,chain="A", args$output_dir, args$level,args$directory)
   
   process_file(inputFolder,chain="B", args$output_dir, args$level,args$directory)
 }
 
 process_file<-function(inputFolder, chain, output_dir, level,inputDir){
+  #process mixcr file to create smple info and diversity info
+  # @param inputFolder folder where mixcr file are stored
+  # @param chain alpha or beta chain for TCR (A, B)
+  # @param output_dir output directory 
+  # @param level level for processing V, J, VpJ, CDR3aa
+  # @param inputDir input directory
   datatab <- readClonotypeSet(inputFolder, cores=2L, aligner="MiXCR", chain=chain, sampleinfo=NULL, keep.ambiguous=FALSE, keep.unproductive=FALSE, aa.th=8)
   # # write to a file
   if(!file.exists(paste(output_dir,"sample_info",chain,".csv", sep=""))){
@@ -64,7 +50,10 @@ process_file<-function(inputFolder, chain, output_dir, level,inputDir){
   # # write to a file
   if(!file.exists(paste(output_dir,"renyi_Profile",chain,".csv", sep=""))){
   res<-renyiProfiles(datatab, level=level)
-  write.csv(t(res),paste(output_dir,"renyi_Profile",chain,".csv", sep="")) 
+  res<-t(res)
+  colnames(res) <- res[1,]
+  res<-res[-1,]
+  write.csv(res,paste(output_dir,"renyi_Profile",chain,".csv", sep="")) 
 #  writeReadme(output_dir,inputDir,level,datatab@History$history)
   }else{
     stop(paste("file",output_dir,"renyi_Profile",chain,".csv"," already exist", sep=""))
@@ -77,8 +66,13 @@ process_file<-function(inputFolder, chain, output_dir, level,inputDir){
 
 
 writeReadme<-function(output_dir, input_dir,level, RepseqExperimentHistory){
-  print("pong")
-  info_file<-paste(output_dir,"info.txt", sep="")
+  # write a read me for the file
+  # @param output_dir output directory 
+  # @param inputDir input directory
+  # @param level level for processing V, J, VpJ, CDR3aa
+  # @param RepseqExperimentHistory a dataframe with the history of a repseq experiment
+
+    info_file<-paste(output_dir,"info.txt", sep="")
   file.create(info_file)
   
   write("\n",info_file,append =TRUE)
@@ -108,17 +102,17 @@ writeReadme<-function(output_dir, input_dir,level, RepseqExperimentHistory){
 lib_write<-function(package_info, file_name){
   #write information in readme file
   #
-  #
   
    write(package_info$Package,file_name,append =TRUE)
    write(package_info$Title,file_name,append =TRUE)
    write(package_info$Version,file_name,append =TRUE)
-  # 
+
   
 }
 
 basicIndicesA <- function(x, level=c("VpJ", "V", "J", "VJ", "CDR3aa")) {
- 
+ # function to create all diversity
+  
   if (missing(x)) stop("x is missing.")
   if (!is.RepSeqExperiment(x)) stop("an object of class  is expected.")
   levelChoice <- match.arg(level)
